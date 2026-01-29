@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include src/jenkins_mcp_server py.typed
+recursive-include examples *.py *.json *.example
+prune tests
+prune .gitlab-ci.yml

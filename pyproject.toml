@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jenkins-mcp-server"
+version = "1.0.0"
+description = "Jenkins MCP Server for Cursor IDE - CI/CD Integration Tool"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.7"
+authors = [
+    {name = "Suman Saurabh"}
+]
+maintainers = [
+    {name = "Suman Saurabh"}
+]
+keywords = ["jenkins", "mcp", "cursor", "ci-cd", "automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "requests>=2.25.0",
+    "urllib3>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+jenkins-mcp-server = "jenkins_mcp_server.server:main"
+jenkins-mcp = "jenkins_mcp_server.cli:main"
+
+[project.urls]
+Homepage = "https://git.druva.org/credits/jenkins-mcp-server"
+Repository = "https://git.druva.org/credits/jenkins-mcp-server"
+Documentation = "https://git.druva.org/credits/jenkins-mcp-server/-/blob/master/README.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+jenkins_mcp_server = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=jenkins_mcp_server --cov-report=term-missing"
