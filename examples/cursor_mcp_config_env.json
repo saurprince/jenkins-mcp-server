@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "jenkins": {
+      "command": "jenkins-mcp-server",
+      "args": ["--no-verify-ssl"],
+      "env": {
+        "JENKINS_URL": "https://your-jenkins-server.example.com:8443",
+        "JENKINS_USERNAME": "YOUR_USERNAME",
+        "JENKINS_TOKEN": "YOUR_API_TOKEN"
+      },
+      "disabled": false,
+      "timeout": 60
+    }
+  }
+}
