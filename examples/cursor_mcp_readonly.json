@@ -4,10 +4,10 @@
       "command": "jenkins-mcp-server",
       "args": [
         "--url", "https://your-jenkins-server.example.com:8443",
-        "--username", "YOUR_USERNAME",
-        "--token", "YOUR_API_TOKEN",
+        "--username", "VIEWER_USERNAME",
+        "--token", "VIEWER_API_TOKEN",
         "--no-verify-ssl",
-        "--mode", "standard"
+        "--mode", "read-only"
       ],
       "disabled": false,
       "timeout": 60

@@ -13,11 +13,18 @@ Usage:
     jenkins-mcp get-build-info --job JOB --build NUMBER
 """
 
-__version__ = "1.0.0"
-__author__ = "Druva QA Team"
-__email__ = "orcas-scrum@druva.com"
+__version__ = "2.0.0"
+__author__ = "Suman Saurabh"
+__email__ = "saurprince@gmail.com"
 
 from .client import JenkinsClient
-from .server import JenkinsMCPServer, TOOLS
+from .server import JenkinsMCPServer, TOOLS, ACCESS_LEVELS, get_tools_for_mode
 
-__all__ = ["JenkinsClient", "JenkinsMCPServer", "TOOLS", "__version__"]
+__all__ = [
+    "JenkinsClient",
+    "JenkinsMCPServer",
+    "TOOLS",
+    "ACCESS_LEVELS",
+    "get_tools_for_mode",
+    "__version__",
+]

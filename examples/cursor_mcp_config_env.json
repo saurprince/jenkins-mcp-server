@@ -6,7 +6,8 @@
       "env": {
         "JENKINS_URL": "https://your-jenkins-server.example.com:8443",
         "JENKINS_USERNAME": "YOUR_USERNAME",
-        "JENKINS_TOKEN": "YOUR_API_TOKEN"
+        "JENKINS_TOKEN": "YOUR_API_TOKEN",
+        "JENKINS_MODE": "standard"
       },
       "disabled": false,
       "timeout": 60

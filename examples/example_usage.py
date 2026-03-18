@@ -8,27 +8,26 @@ Make sure to set environment variables or modify the credentials below.
 
 import os
 from jenkins_mcp_server import JenkinsClient
+from jenkins_mcp_server.client import render_job_template
 
 
 def main():
-    # Get credentials from environment or use defaults for demo
-    url = os.environ.get('JENKINS_URL', 'https://dcpinternal.druva.org:8443')
+    url = os.environ.get('JENKINS_URL', 'https://your-jenkins.example.com:8443')
     username = os.environ.get('JENKINS_USERNAME', 'your-username')
     token = os.environ.get('JENKINS_TOKEN', 'your-token')
-    
-    # Create client
+
     client = JenkinsClient(
         url=url,
         username=username,
         token=token,
-        verify_ssl=False  # For self-signed certificates
+        verify_ssl=False,
     )
-    
+
     print("=" * 60)
-    print("Jenkins MCP Server - Example Usage")
+    print("Jenkins MCP Server v2.0 - Example Usage")
     print("=" * 60)
-    
-    # Example 1: List all jobs
+
+    # 1. List all jobs
     print("\n1. Listing all jobs...")
     try:
         jobs = client.list_jobs()
@@ -42,58 +41,39 @@ def main():
             print(f"   ... and {len(jobs) - 5} more")
     except Exception as e:
         print(f"   Error: {e}")
-    
-    # Example 2: Get job details
-    print("\n2. Getting job details for 'Orcas_Nightly'...")
+
+    # 2. System info
+    print("\n2. Getting Jenkins system info...")
     try:
-        job = client.get_job_details('Orcas_Nightly')
-        print(f"   Name: {job.get('name')}")
-        print(f"   URL: {job.get('url')}")
-        print(f"   Buildable: {job.get('buildable')}")
-        last_build = job.get('lastBuild', {})
-        if last_build:
-            print(f"   Last build: #{last_build.get('number')}")
+        info = client.get_system_info()
+        print(f"   Version: {info.get('version')}")
+        print(f"   Mode: {info.get('mode')}")
+        print(f"   Executors: {info.get('numExecutors')}")
     except Exception as e:
         print(f"   Error: {e}")
-    
-    # Example 3: Get build information
-    print("\n3. Getting build info for 'Orcas_Nightly' #64...")
+
+    # 3. List views
+    print("\n3. Listing views...")
     try:
-        build = client.get_build_info('Orcas_Nightly', 64)
-        print(f"   Result: {build.get('result')}")
-        print(f"   Duration: {build.get('duration', 0) / 1000:.1f} seconds")
-        print(f"   Building: {build.get('building')}")
+        views = client.list_views()
+        print(f"   Found {len(views)} views")
+        for v in views[:5]:
+            print(f"   - {v.get('name')}: {v.get('url')}")
     except Exception as e:
         print(f"   Error: {e}")
-    
-    # Example 4: Get test report
-    print("\n4. Getting test report for 'Orcas_Nightly' #64...")
+
+    # 4. List plugins (first 5)
+    print("\n4. Listing plugins (first 5)...")
     try:
-        report = client.get_test_report('Orcas_Nightly', 64)
-        if 'error' in report:
-            print(f"   {report['error']}")
-        else:
-            print(f"   Passed: {report.get('passCount', 0)}")
-            print(f"   Failed: {report.get('failCount', 0)}")
-            print(f"   Skipped: {report.get('skipCount', 0)}")
-            print(f"   Duration: {report.get('duration', 0):.2f} seconds")
+        plugins = client.list_plugins()
+        print(f"   Found {len(plugins)} plugins")
+        for p in plugins[:5]:
+            print(f"   - {p.get('shortName')} v{p.get('version')} ({'active' if p.get('active') else 'inactive'})")
     except Exception as e:
         print(f"   Error: {e}")
-    
-    # Example 5: Get build parameters
-    print("\n5. Getting build parameters for 'Orcas_Nightly' #64...")
-    try:
-        params = client.get_build_parameters('Orcas_Nightly', 64)
-        if params:
-            for param in params[:5]:
-                print(f"   {param.get('name')}: {param.get('value')}")
-        else:
-            print("   No parameters found")
-    except Exception as e:
-        print(f"   Error: {e}")
-    
-    # Example 6: List nodes
-    print("\n6. Listing Jenkins nodes...")
+
+    # 5. List nodes
+    print("\n5. Listing Jenkins nodes...")
     try:
         nodes = client.list_nodes()
         print(f"   Found {len(nodes)} nodes")
@@ -103,19 +83,45 @@ def main():
             print(f"   - {name}: {offline}")
     except Exception as e:
         print(f"   Error: {e}")
-    
-    # Example 7: Get queue info
-    print("\n7. Getting build queue info...")
+
+    # 6. Get job details
+    print("\n6. Getting job details for first job...")
     try:
-        queue = client.get_queue_info()
-        items = queue.get('items', [])
-        print(f"   {len(items)} items in queue")
-        for item in items[:3]:
-            task = item.get('task', {})
-            print(f"   - {task.get('name', 'unknown')}: {item.get('why', 'waiting')}")
+        jobs = client.list_jobs()
+        if jobs:
+            job_name = jobs[0]['name']
+            job = client.get_job_details(job_name)
+            print(f"   Name: {job.get('name')}")
+            print(f"   Buildable: {job.get('buildable')}")
+            last_build = job.get('lastBuild', {})
+            if last_build:
+                print(f"   Last build: #{last_build.get('number')}")
+
+                # 7. Pipeline stages (if applicable)
+                print(f"\n7. Checking pipeline stages for {job_name} #{last_build.get('number')}...")
+                stages = client.get_pipeline_stages(job_name, last_build['number'])
+                if 'error' not in stages:
+                    for s in stages.get('stages', []):
+                        print(f"   - {s.get('name')}: {s.get('status')} ({s.get('durationMillis', 0)}ms)")
+                else:
+                    print(f"   {stages['error']}")
     except Exception as e:
         print(f"   Error: {e}")
-    
+
+    # 8. Job template rendering (no API call needed)
+    print("\n8. Rendering job templates (local only)...")
+    for tmpl in ['freestyle', 'pipeline', 'pipeline-scm', 'multibranch']:
+        try:
+            xml = render_job_template(
+                tmpl,
+                description=f'Demo {tmpl} job',
+                script='echo hello',
+                repo_url='https://github.com/example/repo.git',
+            )
+            print(f"   - {tmpl}: {len(xml)} chars of XML")
+        except Exception as e:
+            print(f"   - {tmpl}: Error: {e}")
+
     print("\n" + "=" * 60)
     print("Examples completed!")
     print("=" * 60)

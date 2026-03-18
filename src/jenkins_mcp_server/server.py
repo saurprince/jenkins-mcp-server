@@ -24,12 +24,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+ACCESS_LEVELS = {
+    "read-only": 0,
+    "standard": 1,
+    "admin": 2,
+}
 
 # MCP Tool definitions
 TOOLS: List[Dict[str, Any]] = [
     {
         "name": "list_jobs",
         "description": "List all Jenkins jobs with their status, URLs, and last build info",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -44,6 +50,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_job_details",
         "description": "Get detailed information about a specific Jenkins job including builds, health reports",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -58,6 +65,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_build_info",
         "description": "Get information about a specific build including status, duration, result, and actions",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -76,6 +84,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_build_console",
         "description": "Get console output from a Jenkins build with optional line pagination",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -104,6 +113,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_test_report",
         "description": "Get test report for a build including pass/fail counts, test suites, and test cases",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -122,6 +132,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_build_parameters",
         "description": "Get the parameters used for a specific build",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -140,6 +151,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "trigger_build",
         "description": "Trigger a new build for a Jenkins job with optional parameters",
+        "mode": "standard",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -158,6 +170,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "stop_build",
         "description": "Stop a running Jenkins build",
+        "mode": "standard",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -176,6 +189,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_queue_info",
         "description": "Get information about the Jenkins build queue including pending builds",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {},
@@ -185,6 +199,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "list_nodes",
         "description": "List all Jenkins nodes/agents with their status and configuration",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {},
@@ -194,6 +209,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_node_info",
         "description": "Get information about a specific Jenkins node/agent",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -208,6 +224,7 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_artifacts",
         "description": "Get list of artifacts for a build",
+        "mode": "read-only",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -222,8 +239,369 @@ TOOLS: List[Dict[str, Any]] = [
             },
             "required": ["job_name", "build_number"]
         }
-    }
+    },
+
+    # --- Phase 2: previously hidden client methods -----------------------
+
+    {
+        "name": "get_coverage_report",
+        "description": "Get code coverage report for a build (requires coverage plugin)",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the Jenkins job"
+                },
+                "build_number": {
+                    "type": "integer",
+                    "description": "Build number"
+                }
+            },
+            "required": ["job_name", "build_number"]
+        }
+    },
+    {
+        "name": "get_queue_item",
+        "description": "Get details about a specific item in the Jenkins build queue",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "queue_id": {
+                    "type": "integer",
+                    "description": "Queue item ID (returned when a build is triggered)"
+                }
+            },
+            "required": ["queue_id"]
+        }
+    },
+    {
+        "name": "get_progressive_console",
+        "description": "Get progressive (streaming) console output for a live build, starting from a byte offset",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the Jenkins job"
+                },
+                "build_number": {
+                    "type": "integer",
+                    "description": "Build number"
+                },
+                "start": {
+                    "type": "integer",
+                    "description": "Byte offset to start reading from (0 for beginning)",
+                    "default": 0
+                }
+            },
+            "required": ["job_name", "build_number"]
+        }
+    },
+
+    # --- Phase 4: new read-only tools ------------------------------------
+
+    {
+        "name": "get_pipeline_stages",
+        "description": "Get Pipeline stage breakdown with status, duration, and steps for a build",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the Pipeline job"
+                },
+                "build_number": {
+                    "type": "integer",
+                    "description": "Build number"
+                }
+            },
+            "required": ["job_name", "build_number"]
+        }
+    },
+    {
+        "name": "get_job_config",
+        "description": "Get the raw XML configuration of a Jenkins job",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the Jenkins job"
+                }
+            },
+            "required": ["job_name"]
+        }
+    },
+    {
+        "name": "list_credentials",
+        "description": "List credential IDs in Jenkins (values are never exposed)",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "type": "string",
+                    "description": "Credential domain (default: _ for global)",
+                    "default": "_"
+                }
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "list_views",
+        "description": "List all views configured on the Jenkins instance",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
+        "name": "get_view_info",
+        "description": "Get detailed information about a Jenkins view including its jobs",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "view_name": {
+                    "type": "string",
+                    "description": "Name of the view"
+                }
+            },
+            "required": ["view_name"]
+        }
+    },
+    {
+        "name": "get_system_info",
+        "description": "Get Jenkins system information including version, executor count, and mode",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
+        "name": "list_plugins",
+        "description": "List installed Jenkins plugins with name, version, and status",
+        "mode": "read-only",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+
+    # --- Phase 4: admin-only tools ---------------------------------------
+
+    {
+        "name": "create_job",
+        "description": "Create a new Jenkins job from XML config or a built-in template (freestyle, pipeline, pipeline-scm, multibranch)",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name for the new job"
+                },
+                "config_xml": {
+                    "type": "string",
+                    "description": "Raw XML configuration (takes priority over template)"
+                },
+                "template": {
+                    "type": "string",
+                    "enum": ["freestyle", "pipeline", "pipeline-scm", "multibranch"],
+                    "description": "Built-in template to use if config_xml is not provided"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Job description (used with template)"
+                },
+                "script": {
+                    "type": "string",
+                    "description": "Shell command (freestyle) or Groovy pipeline script (pipeline template)"
+                },
+                "repo_url": {
+                    "type": "string",
+                    "description": "Git repository URL (pipeline-scm template)"
+                },
+                "branch": {
+                    "type": "string",
+                    "description": "Branch specifier (pipeline-scm template, default: */main)"
+                },
+                "script_path": {
+                    "type": "string",
+                    "description": "Path to Jenkinsfile (pipeline-scm/multibranch, default: Jenkinsfile)"
+                },
+                "credential_id": {
+                    "type": "string",
+                    "description": "Jenkins credential ID for SCM access"
+                },
+                "folder": {
+                    "type": "string",
+                    "description": "Folder to create the job in"
+                }
+            },
+            "required": ["job_name"]
+        }
+    },
+    {
+        "name": "delete_job",
+        "description": "Delete a Jenkins job permanently",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the job to delete"
+                }
+            },
+            "required": ["job_name"]
+        }
+    },
+    {
+        "name": "enable_job",
+        "description": "Enable a disabled Jenkins job",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the job to enable"
+                }
+            },
+            "required": ["job_name"]
+        }
+    },
+    {
+        "name": "disable_job",
+        "description": "Disable a Jenkins job (prevents new builds)",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the job to disable"
+                }
+            },
+            "required": ["job_name"]
+        }
+    },
+    {
+        "name": "copy_job",
+        "description": "Copy an existing Jenkins job to create a new one",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "source_name": {
+                    "type": "string",
+                    "description": "Name of the job to copy from"
+                },
+                "new_name": {
+                    "type": "string",
+                    "description": "Name for the new job"
+                }
+            },
+            "required": ["source_name", "new_name"]
+        }
+    },
+    {
+        "name": "update_job_config",
+        "description": "Update a job's XML configuration",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the Jenkins job"
+                },
+                "config_xml": {
+                    "type": "string",
+                    "description": "New XML configuration content"
+                }
+            },
+            "required": ["job_name", "config_xml"]
+        }
+    },
+    {
+        "name": "create_folder",
+        "description": "Create a new folder in Jenkins for organizing jobs",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "description": "Name for the new folder"
+                },
+                "parent": {
+                    "type": "string",
+                    "description": "Optional parent folder path"
+                }
+            },
+            "required": ["folder_name"]
+        }
+    },
+    {
+        "name": "replay_build",
+        "description": "Replay a Pipeline build, optionally with a modified Groovy script",
+        "mode": "admin",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_name": {
+                    "type": "string",
+                    "description": "Name of the Pipeline job"
+                },
+                "build_number": {
+                    "type": "integer",
+                    "description": "Build number to replay"
+                },
+                "script": {
+                    "type": "string",
+                    "description": "Optional modified Groovy pipeline script"
+                }
+            },
+            "required": ["job_name", "build_number"]
+        }
+    },
 ]
+
+
+def get_tools_for_mode(mode: str) -> List[Dict[str, Any]]:
+    """Return tool definitions accessible at the given access mode.
+
+    Tools are filtered so that only those whose required access level
+    is at or below the requested mode are included.  The ``mode``
+    metadata key is stripped from the returned dicts so that MCP
+    clients receive a clean schema.
+    """
+    max_level = ACCESS_LEVELS.get(mode, ACCESS_LEVELS["standard"])
+    filtered = []
+    for tool in TOOLS:
+        if ACCESS_LEVELS.get(tool.get("mode", "read-only"), 0) <= max_level:
+            clean = {k: v for k, v in tool.items() if k != "mode"}
+            filtered.append(clean)
+    return filtered
+
+
+def _tool_mode_map() -> Dict[str, str]:
+    """Build a mapping of tool name -> required mode from TOOLS."""
+    return {t["name"]: t.get("mode", "read-only") for t in TOOLS}
 
 
 class JenkinsMCPServer:
@@ -235,16 +613,21 @@ class JenkinsMCPServer:
     
     Args:
         client: JenkinsClient instance for API communication
+        mode: Access mode -- "read-only", "standard", or "admin"
     
     Example:
         >>> client = JenkinsClient(url, username, token)
-        >>> server = JenkinsMCPServer(client)
+        >>> server = JenkinsMCPServer(client, mode="standard")
         >>> server.run_stdio()  # Start MCP server
     """
     
-    def __init__(self, client: JenkinsClient):
+    def __init__(self, client: JenkinsClient, mode: str = "standard"):
         """Initialize MCP server with Jenkins client."""
         self.client = client
+        if mode not in ACCESS_LEVELS:
+            raise ValueError(f"Invalid mode '{mode}'. Must be one of: {', '.join(ACCESS_LEVELS)}")
+        self.mode = mode
+        self._tool_modes = _tool_mode_map()
     
     def handle_tool_call(self, name: str, arguments: Dict[str, Any]) -> Any:
         """Execute a tool and return the result.
@@ -256,6 +639,17 @@ class JenkinsMCPServer:
         Returns:
             Tool execution result
         """
+        required_mode = self._tool_modes.get(name)
+        if required_mode is None:
+            return {"error": f"Unknown tool: {name}"}
+        if ACCESS_LEVELS.get(required_mode, 0) > ACCESS_LEVELS.get(self.mode, 1):
+            return {
+                "error": (
+                    f"Tool '{name}' requires '{required_mode}' mode, "
+                    f"but server is running in '{self.mode}' mode. "
+                    f"Restart with --mode {required_mode} to enable this tool."
+                )
+            }
         try:
             if name == "list_jobs":
                 jobs = self.client.list_jobs(arguments.get("folder"))
@@ -329,7 +723,109 @@ class JenkinsMCPServer:
                     arguments["job_name"],
                     arguments["build_number"]
                 )
-            
+
+            # Phase 2: previously hidden methods
+            elif name == "get_coverage_report":
+                return self.client.get_coverage_report(
+                    arguments["job_name"],
+                    arguments["build_number"]
+                )
+
+            elif name == "get_queue_item":
+                return self.client.get_queue_item(arguments["queue_id"])
+
+            elif name == "get_progressive_console":
+                return self.client.get_progressive_console(
+                    arguments["job_name"],
+                    arguments["build_number"],
+                    start=arguments.get("start", 0)
+                )
+
+            # Phase 4: new read-only tools
+            elif name == "get_pipeline_stages":
+                return self.client.get_pipeline_stages(
+                    arguments["job_name"],
+                    arguments["build_number"]
+                )
+
+            elif name == "get_job_config":
+                config = self.client.get_job_config(arguments["job_name"])
+                return {"job_name": arguments["job_name"], "config_xml": config}
+
+            elif name == "list_credentials":
+                return self.client.list_credentials(
+                    domain=arguments.get("domain", "_")
+                )
+
+            elif name == "list_views":
+                views = self.client.list_views()
+                return {"total": len(views), "views": views}
+
+            elif name == "get_view_info":
+                return self.client.get_view_info(arguments["view_name"])
+
+            elif name == "get_system_info":
+                return self.client.get_system_info()
+
+            elif name == "list_plugins":
+                plugins = self.client.list_plugins()
+                return {"total": len(plugins), "plugins": plugins}
+
+            # Phase 4: admin tools
+            elif name == "create_job":
+                config_xml = arguments.get("config_xml")
+                if not config_xml:
+                    from .client import render_job_template
+                    template = arguments.get("template", "freestyle")
+                    config_xml = render_job_template(
+                        template=template,
+                        description=arguments.get("description", ""),
+                        script=arguments.get("script", ""),
+                        repo_url=arguments.get("repo_url", ""),
+                        branch=arguments.get("branch", "*/main"),
+                        script_path=arguments.get("script_path", "Jenkinsfile"),
+                        credential_id=arguments.get("credential_id", ""),
+                    )
+                return self.client.create_job(
+                    arguments["job_name"],
+                    config_xml,
+                    folder=arguments.get("folder"),
+                )
+
+            elif name == "delete_job":
+                return self.client.delete_job(arguments["job_name"])
+
+            elif name == "enable_job":
+                return self.client.enable_job(arguments["job_name"])
+
+            elif name == "disable_job":
+                return self.client.disable_job(arguments["job_name"])
+
+            elif name == "copy_job":
+                return self.client.copy_job(
+                    arguments["source_name"],
+                    arguments["new_name"]
+                )
+
+            elif name == "update_job_config":
+                return self.client.update_job_config(
+                    arguments["job_name"],
+                    arguments["config_xml"]
+                )
+
+            elif name == "create_folder":
+                return self.client.create_folder(
+                    arguments["folder_name"],
+                    parent=arguments.get("parent"),
+                )
+
+            elif name == "replay_build":
+                return self.client.replay_build(
+                    arguments["job_name"],
+                    arguments["build_number"],
+                    script=arguments.get("script"),
+                )
+
             else:
                 return {"error": f"Unknown tool: {name}"}
                 
@@ -365,8 +861,8 @@ class JenkinsMCPServer:
                             "tools": {}
                         },
                         "serverInfo": {
-                            "name": "druva-jenkins-mcp-server",
-                            "version": "1.0.0"
+                            "name": "jenkins-mcp-server",
+                            "version": "2.0.0"
                         }
                     }
                 }
@@ -379,7 +875,7 @@ class JenkinsMCPServer:
                 return {
                     "jsonrpc": "2.0",
                     "id": request_id,
-                    "result": {"tools": TOOLS}
+                    "result": {"tools": get_tools_for_mode(self.mode)}
                 }
             
             elif method == "tools/call":
@@ -499,6 +995,7 @@ Environment Variables:
   JENKINS_USERNAME    Jenkins username
   JENKINS_TOKEN       Jenkins API token
   JENKINS_VERIFY_SSL  Set to 'false' to disable SSL verification
+  JENKINS_MODE        Access mode: read-only, standard (default), admin
 
 Examples:
   # Run as MCP server (for Cursor)
@@ -527,6 +1024,12 @@ Examples:
         '--no-verify-ssl',
         action='store_true',
         help='Disable SSL certificate verification'
+    )
+    parser.add_argument(
+        '--mode',
+        choices=['read-only', 'standard', 'admin'],
+        default=None,
+        help='Access mode: read-only (view only), standard (default, +trigger/stop), admin (full control)'
     )
     parser.add_argument(
         '--verbose', '-v',
@@ -558,7 +1061,9 @@ Examples:
         parser.error(str(e))
         return 1
     
-    server = JenkinsMCPServer(client)
+    mode = args.mode or os.environ.get('JENKINS_MODE', 'standard')
+    server = JenkinsMCPServer(client, mode=mode)
+    logger.info(f"Access mode: {mode}")
     
     # Test mode
     if args.test:

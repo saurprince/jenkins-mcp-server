@@ -11,7 +11,7 @@ import os
 import sys
 from typing import Optional
 
-from .client import JenkinsClient
+from .client import JenkinsClient, render_job_template
 
 
 def get_client(args: argparse.Namespace) -> JenkinsClient:
@@ -41,7 +41,6 @@ def format_output(data, format_type: str = 'json'):
     if format_type == 'json':
         return json.dumps(data, indent=2)
     elif format_type == 'table':
-        # Simple table format for lists
         if isinstance(data, list):
             if not data:
                 return "No items"
@@ -54,6 +53,10 @@ def format_output(data, format_type: str = 'json'):
         return str(data)
     return str(data)
 
+
+# ---------------------------------------------------------------------------
+# Original commands
+# ---------------------------------------------------------------------------
 
 def cmd_list_jobs(args):
     """List all Jenkins jobs."""
@@ -148,6 +151,165 @@ def cmd_get_queue(args):
     print(format_output(queue, args.format))
 
 
+# ---------------------------------------------------------------------------
+# New commands (v2.0)
+# ---------------------------------------------------------------------------
+
+def cmd_get_coverage(args):
+    """Get coverage report."""
+    client = get_client(args)
+    report = client.get_coverage_report(args.job, args.build)
+    print(format_output(report, args.format))
+
+
+def cmd_get_stages(args):
+    """Get pipeline stages."""
+    client = get_client(args)
+    stages = client.get_pipeline_stages(args.job, args.build)
+    if args.format == 'simple' and 'stages' in stages:
+        for s in stages['stages']:
+            print(f"{s.get('name', '?')}\t{s.get('status', '?')}\t{s.get('durationMillis', 0)}ms")
+    else:
+        print(format_output(stages, args.format))
+
+
+def cmd_get_config(args):
+    """Get job XML configuration."""
+    client = get_client(args)
+    config = client.get_job_config(args.job)
+    print(config)
+
+
+def cmd_update_config(args):
+    """Update job XML configuration."""
+    client = get_client(args)
+    if args.file == '-':
+        config_xml = sys.stdin.read()
+    else:
+        with open(args.file, 'r', encoding='utf-8') as f:
+            config_xml = f.read()
+    result = client.update_job_config(args.job, config_xml)
+    print(format_output(result, args.format))
+
+
+def cmd_system_info(args):
+    """Get Jenkins system info."""
+    client = get_client(args)
+    info = client.get_system_info()
+    if args.format == 'simple':
+        print(f"Version: {info.get('version', '?')}")
+        print(f"Mode: {info.get('mode', '?')}")
+        print(f"Executors: {info.get('numExecutors', '?')}")
+        print(f"Quieting Down: {info.get('quietingDown', '?')}")
+    else:
+        print(format_output(info, args.format))
+
+
+def cmd_list_plugins(args):
+    """List installed plugins."""
+    client = get_client(args)
+    plugins = client.list_plugins()
+    if args.format == 'simple':
+        for p in plugins:
+            active = 'active' if p.get('active') else 'inactive'
+            print(f"{p.get('shortName', '?')}\t{p.get('version', '?')}\t{active}")
+    else:
+        print(format_output(plugins, args.format))
+
+
+def cmd_list_views(args):
+    """List Jenkins views."""
+    client = get_client(args)
+    views = client.list_views()
+    if args.format == 'simple':
+        for v in views:
+            print(f"{v.get('name', '?')}\t{v.get('url', '')}")
+    else:
+        print(format_output(views, args.format))
+
+
+def cmd_list_credentials(args):
+    """List credentials."""
+    client = get_client(args)
+    creds = client.list_credentials(domain=args.domain)
+    print(format_output(creds, args.format))
+
+
+def cmd_create_job(args):
+    """Create a new Jenkins job."""
+    client = get_client(args)
+    if args.config_file:
+        with open(args.config_file, 'r', encoding='utf-8') as f:
+            config_xml = f.read()
+    else:
+        config_xml = render_job_template(
+            template=args.template or 'freestyle',
+            description=args.description or '',
+            script=args.script or '',
+            repo_url=args.repo_url or '',
+            branch=args.branch or '*/main',
+            script_path=args.script_path or 'Jenkinsfile',
+            credential_id=args.credential_id or '',
+        )
+    result = client.create_job(args.job, config_xml, folder=args.folder)
+    print(format_output(result, args.format))
+
+
+def cmd_delete_job(args):
+    """Delete a Jenkins job."""
+    client = get_client(args)
+    if not args.yes:
+        confirm = input(f"Delete job '{args.job}'? [y/N] ")
+        if confirm.lower() != 'y':
+            print("Cancelled.")
+            return
+    result = client.delete_job(args.job)
+    print(format_output(result, args.format))
+
+
+def cmd_enable_job(args):
+    """Enable a Jenkins job."""
+    client = get_client(args)
+    result = client.enable_job(args.job)
+    print(format_output(result, args.format))
+
+
+def cmd_disable_job(args):
+    """Disable a Jenkins job."""
+    client = get_client(args)
+    result = client.disable_job(args.job)
+    print(format_output(result, args.format))
+
+
+def cmd_copy_job(args):
+    """Copy a Jenkins job."""
+    client = get_client(args)
+    result = client.copy_job(args.source, args.new_name)
+    print(format_output(result, args.format))
+
+
+def cmd_create_folder(args):
+    """Create a Jenkins folder."""
+    client = get_client(args)
+    result = client.create_folder(args.name, parent=args.parent)
+    print(format_output(result, args.format))
+
+
+def cmd_replay_build(args):
+    """Replay a pipeline build."""
+    client = get_client(args)
+    script = None
+    if args.script_file:
+        with open(args.script_file, 'r', encoding='utf-8') as f:
+            script = f.read()
+    result = client.replay_build(args.job, args.build, script=script)
+    print(format_output(result, args.format))
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -165,23 +327,21 @@ def main():
     
     subparsers = parser.add_subparsers(dest='command', help='Commands')
     
-    # list-jobs
+    # --- Read commands ---------------------------------------------------
+
     p_list = subparsers.add_parser('list-jobs', aliases=['ls'], help='List all jobs')
     p_list.add_argument('--folder', help='Folder path to list jobs from')
     p_list.set_defaults(func=cmd_list_jobs)
     
-    # get-job
     p_job = subparsers.add_parser('get-job', aliases=['job'], help='Get job details')
     p_job.add_argument('job', help='Job name')
     p_job.set_defaults(func=cmd_get_job)
     
-    # get-build
     p_build = subparsers.add_parser('get-build', aliases=['build'], help='Get build info')
     p_build.add_argument('--job', '-j', required=True, help='Job name')
     p_build.add_argument('--build', '-b', type=int, required=True, help='Build number')
     p_build.set_defaults(func=cmd_get_build)
     
-    # get-console
     p_console = subparsers.add_parser('get-console', aliases=['console', 'log'], help='Get build console')
     p_console.add_argument('--job', '-j', required=True, help='Job name')
     p_console.add_argument('--build', '-b', type=int, required=True, help='Build number')
@@ -189,32 +349,108 @@ def main():
     p_console.add_argument('--head', type=int, help='Show first N lines')
     p_console.set_defaults(func=cmd_get_console)
     
-    # get-test-report
     p_test = subparsers.add_parser('get-test-report', aliases=['test', 'tests'], help='Get test report')
     p_test.add_argument('--job', '-j', required=True, help='Job name')
     p_test.add_argument('--build', '-b', type=int, required=True, help='Build number')
     p_test.add_argument('--summary', '-s', action='store_true', help='Show summary only')
     p_test.set_defaults(func=cmd_get_test_report)
+
+    p_coverage = subparsers.add_parser('get-coverage', aliases=['coverage'], help='Get coverage report')
+    p_coverage.add_argument('--job', '-j', required=True, help='Job name')
+    p_coverage.add_argument('--build', '-b', type=int, required=True, help='Build number')
+    p_coverage.set_defaults(func=cmd_get_coverage)
+
+    p_stages = subparsers.add_parser('get-stages', aliases=['stages'], help='Get pipeline stages')
+    p_stages.add_argument('--job', '-j', required=True, help='Job name')
+    p_stages.add_argument('--build', '-b', type=int, required=True, help='Build number')
+    p_stages.set_defaults(func=cmd_get_stages)
+
+    p_config = subparsers.add_parser('get-config', aliases=['config'], help='Get job XML config')
+    p_config.add_argument('job', help='Job name')
+    p_config.set_defaults(func=cmd_get_config)
+
+    p_sysinfo = subparsers.add_parser('system-info', aliases=['sysinfo'], help='Jenkins system info')
+    p_sysinfo.set_defaults(func=cmd_system_info)
+
+    p_plugins = subparsers.add_parser('list-plugins', aliases=['plugins'], help='List installed plugins')
+    p_plugins.set_defaults(func=cmd_list_plugins)
+
+    p_views = subparsers.add_parser('list-views', aliases=['views'], help='List Jenkins views')
+    p_views.set_defaults(func=cmd_list_views)
+
+    p_creds = subparsers.add_parser('list-credentials', aliases=['creds'], help='List credentials')
+    p_creds.add_argument('--domain', default='_', help='Credential domain (default: _)')
+    p_creds.set_defaults(func=cmd_list_credentials)
+
+    p_nodes = subparsers.add_parser('list-nodes', aliases=['nodes'], help='List Jenkins nodes')
+    p_nodes.set_defaults(func=cmd_list_nodes)
     
-    # trigger-build
+    p_queue = subparsers.add_parser('get-queue', aliases=['queue'], help='Get build queue')
+    p_queue.set_defaults(func=cmd_get_queue)
+
+    # --- Write commands --------------------------------------------------
+
     p_trigger = subparsers.add_parser('trigger-build', aliases=['trigger', 'run'], help='Trigger a build')
     p_trigger.add_argument('job', help='Job name')
     p_trigger.add_argument('--parameters', '-p', help='Build parameters as JSON')
     p_trigger.set_defaults(func=cmd_trigger_build)
     
-    # stop-build
     p_stop = subparsers.add_parser('stop-build', aliases=['stop', 'abort'], help='Stop a build')
     p_stop.add_argument('--job', '-j', required=True, help='Job name')
     p_stop.add_argument('--build', '-b', type=int, required=True, help='Build number')
     p_stop.set_defaults(func=cmd_stop_build)
-    
-    # list-nodes
-    p_nodes = subparsers.add_parser('list-nodes', aliases=['nodes'], help='List Jenkins nodes')
-    p_nodes.set_defaults(func=cmd_list_nodes)
-    
-    # get-queue
-    p_queue = subparsers.add_parser('get-queue', aliases=['queue'], help='Get build queue')
-    p_queue.set_defaults(func=cmd_get_queue)
+
+    # --- Admin commands --------------------------------------------------
+
+    p_create = subparsers.add_parser('create-job', help='Create a new job')
+    p_create.add_argument('job', help='Job name')
+    p_create.add_argument('--config-file', help='Path to config.xml file')
+    p_create.add_argument('--template', choices=['freestyle', 'pipeline', 'pipeline-scm', 'multibranch'],
+                          help='Built-in template')
+    p_create.add_argument('--description', help='Job description')
+    p_create.add_argument('--script', help='Shell or Groovy script')
+    p_create.add_argument('--repo-url', help='Git repo URL (pipeline-scm)')
+    p_create.add_argument('--branch', default='*/main', help='Branch (pipeline-scm)')
+    p_create.add_argument('--script-path', default='Jenkinsfile', help='Jenkinsfile path')
+    p_create.add_argument('--credential-id', help='Jenkins credential ID')
+    p_create.add_argument('--folder', help='Parent folder')
+    p_create.set_defaults(func=cmd_create_job)
+
+    p_delete = subparsers.add_parser('delete-job', help='Delete a job')
+    p_delete.add_argument('job', help='Job name')
+    p_delete.add_argument('--yes', '-y', action='store_true', help='Skip confirmation')
+    p_delete.set_defaults(func=cmd_delete_job)
+
+    p_enable = subparsers.add_parser('enable-job', help='Enable a job')
+    p_enable.add_argument('job', help='Job name')
+    p_enable.set_defaults(func=cmd_enable_job)
+
+    p_disable = subparsers.add_parser('disable-job', help='Disable a job')
+    p_disable.add_argument('job', help='Job name')
+    p_disable.set_defaults(func=cmd_disable_job)
+
+    p_copy = subparsers.add_parser('copy-job', aliases=['copy'], help='Copy a job')
+    p_copy.add_argument('source', help='Source job name')
+    p_copy.add_argument('new_name', help='New job name')
+    p_copy.set_defaults(func=cmd_copy_job)
+
+    p_upconfig = subparsers.add_parser('update-config', help='Update job XML config')
+    p_upconfig.add_argument('job', help='Job name')
+    p_upconfig.add_argument('file', help='Path to new config.xml (use - for stdin)')
+    p_upconfig.set_defaults(func=cmd_update_config)
+
+    p_folder = subparsers.add_parser('create-folder', help='Create a folder')
+    p_folder.add_argument('name', help='Folder name')
+    p_folder.add_argument('--parent', help='Parent folder')
+    p_folder.set_defaults(func=cmd_create_folder)
+
+    p_replay = subparsers.add_parser('replay-build', aliases=['replay'], help='Replay a pipeline build')
+    p_replay.add_argument('--job', '-j', required=True, help='Job name')
+    p_replay.add_argument('--build', '-b', type=int, required=True, help='Build number')
+    p_replay.add_argument('--script-file', help='Modified pipeline script file')
+    p_replay.set_defaults(func=cmd_replay_build)
+
+    # --- Parse and run ---------------------------------------------------
     
     args = parser.parse_args()
     

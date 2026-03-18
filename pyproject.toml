@@ -4,16 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jenkins-mcp-server"
-version = "1.0.0"
+version = "2.0.0"
 description = "Jenkins MCP Server for Cursor IDE - CI/CD Integration Tool"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.7"
 authors = [
-    {name = "Suman Saurabh"}
+    {name = "Suman Saurabh", email = "saurprince@gmail.com"}
 ]
 maintainers = [
-    {name = "Suman Saurabh"}
+    {name = "Suman Saurabh", email = "saurprince@gmail.com"}
 ]
 keywords = ["jenkins", "mcp", "cursor", "ci-cd", "automation"]
 classifiers = [
@@ -50,9 +50,9 @@ jenkins-mcp-server = "jenkins_mcp_server.server:main"
 jenkins-mcp = "jenkins_mcp_server.cli:main"
 
 [project.urls]
-Homepage = "https://git.druva.org/credits/jenkins-mcp-server"
-Repository = "https://git.druva.org/credits/jenkins-mcp-server"
-Documentation = "https://git.druva.org/credits/jenkins-mcp-server/-/blob/master/README.md"
+Homepage = "https://github.com/saurprince/jenkins-mcp-server"
+Repository = "https://github.com/saurprince/jenkins-mcp-server"
+Documentation = "https://github.com/saurprince/jenkins-mcp-server#readme"
 
 [tool.setuptools.packages.find]
 where = ["src"]
