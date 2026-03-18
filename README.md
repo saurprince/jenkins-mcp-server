@@ -91,7 +91,7 @@ pip install twine
 twine upload dist/*.whl
 ```
 
-Then anyone in the world can `pip install jenkins-mcp-server`.
+Then anyone in the world can `pip install jenkins-mcp-tools`.
 
 ## Access Modes
 
@@ -409,7 +409,7 @@ client.create_job("my-new-pipeline", config)
 
 ### MCP Server Not Loading in Cursor
 
-1. Verify installation: `pip show jenkins-mcp-server`
+1. Verify installation: `pip show jenkins-mcp-tools`
 2. Test connection: `jenkins-mcp-server --test --url URL --username USER --token TOKEN --no-verify-ssl`
 3. Check Cursor's Output panel for MCP errors
 4. Restart Cursor after changing `mcp.json`
