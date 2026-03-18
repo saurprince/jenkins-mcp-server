@@ -13,8 +13,11 @@ A Model Context Protocol (MCP) server that provides Jenkins CI/CD integration fo
 ## Quick Start
 
 ```bash
-# 1. Install
-pip install git+https://github.com/saurprince/jenkins-mcp-server.git
+# 1. Install (from PyPI)
+pip install jenkins-mcp-tools
+
+# Or install from GitHub
+# pip install git+https://github.com/saurprince/jenkins-mcp-server.git
 
 # 2. Test connection
 jenkins-mcp-server --test \
