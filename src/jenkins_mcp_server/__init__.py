@@ -13,7 +13,7 @@ Usage:
     jenkins-mcp get-build-info --job JOB --build NUMBER
 """
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 __author__ = "Suman Saurabh"
 __email__ = "saurprince@gmail.com"
 

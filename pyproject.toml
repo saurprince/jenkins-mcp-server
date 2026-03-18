@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jenkins-mcp-tools"
-version = "2.0.0"
+version = "2.0.1"
 description = "Jenkins MCP Server for Cursor IDE - CI/CD Integration with Access Modes and 27+ Tools"
 readme = "README.md"
 license = "MIT"
