@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides Jenkins CI/CD integration fo
 
 ## Features
 
-- **27 MCP tools** covering jobs, builds, pipelines, nodes, credentials, views, system info, and more
+- **30 MCP tools** covering jobs, builds, pipelines, nodes, credentials, views, system info, and more
 - **3 access modes** -- `read-only`, `standard`, `admin` -- so you can share safely with any audience
 - **Job creation from templates** -- create Freestyle, Pipeline, Pipeline-SCM, and Multibranch jobs without writing XML
 - **CLI tool** for quick Jenkins queries from the terminal
@@ -104,7 +104,7 @@ The server supports three access modes, controlled via `--mode` flag or `JENKINS
 |------|----------------|----------|
 | `read-only` | 20 read-only tools | Safe for analysts, viewers, dashboards |
 | `standard` (default) | 22 tools (read + trigger/stop builds) | Day-to-day developer use |
-| `admin` | All 27+ tools (read + write + create/delete) | Jenkins administrators |
+| `admin` | All 30 tools (read + write + create/delete) | Jenkins administrators |
 
 ### Read-only mode (safe sharing)
 
