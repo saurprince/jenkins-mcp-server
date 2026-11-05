@@ -377,6 +377,8 @@ The repo includes a ready-to-use agent skill, [`skill/jenkins-cicd/SKILL.md`](sk
 
 The skill does not replace the server. Install and configure `jenkins-mcp-server` first (see [Quick Start](#quick-start)), then copy the `skill/jenkins-cicd` folder into your agent's skills directory (for Claude Code: `~/.claude/skills/` or `.claude/skills/` in your project).
 
+The skill is also listed for free on [Agensi](https://www.agensi.io/skills/jenkins-cicd), a marketplace for agent skills.
+
 ## Python API
 
 ```python
