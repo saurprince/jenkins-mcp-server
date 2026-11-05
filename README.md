@@ -367,6 +367,16 @@ Once configured, you can ask Cursor things like:
 - "Disable the 'old-job' job"
 - "Create a folder called 'team-alpha' for organizing jobs"
 
+## Agent Skill
+
+The repo includes a ready-to-use agent skill, [`skill/jenkins-cicd/SKILL.md`](skill/jenkins-cicd/SKILL.md), that teaches AI agents (Claude Code, Cursor, Copilot, and other agents that support `SKILL.md`) when and how to use these tools:
+
+- which tool to use for common questions, such as "why did build 64 fail?"
+- how the `read-only`, `standard`, and `admin` modes affect what the agent may do
+- safety rules: read before write, confirm destructive actions, and never expose secrets from logs
+
+The skill does not replace the server. Install and configure `jenkins-mcp-server` first (see [Quick Start](#quick-start)), then copy the `skill/jenkins-cicd` folder into your agent's skills directory (for Claude Code: `~/.claude/skills/` or `.claude/skills/` in your project).
+
 ## Python API
 
 ```python
